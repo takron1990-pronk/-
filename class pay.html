@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ClassPay - สาขาการท่องเที่ยวและนิทรรศการ</title>
+  
+  <!-- Fonts & Tailwind -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Prompt', 'sans-serif'] },
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              200: '#bbf7d0',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              800: '#166534',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Prompt', sans-serif; -webkit-tap-highlight-color: transparent; }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 pb-24 md:pb-8">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-emerald-100 shadow-sm">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('dashboard')">
+        <div class="w-10 h-10 rounded-xl bg-brand-600 text-white flex items-center justify-center shadow-md shadow-brand-500/20">
+          <i data-lucide="wallet-cards" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold text-slate-900 leading-tight">Class<span class="text-brand-600">Pay</span></h1>
+          <p class="text-xs text-slate-500 font-medium">สาขาการท่องเที่ยวและนิทรรศการ</p>
+        </div>
+      </div>
+      
+      <!-- เมนู Desktop -->
+      <nav class="hidden md:flex items-center space-x-1">
+        <button onclick="switchTab('dashboard')" class="nav-btn px-4 py-2 rounded-xl font-medium text-sm flex items-center gap-2 text-brand-700 bg-brand-50" data-tab="dashboard">
+          <i data-lucide="pie-chart" class="w-4 h-4"></i> แดชบอร์ด
+        </button>
+        <button onclick="switchTab('members')" class="nav-btn px-4 py-2 rounded-xl font-medium text-sm flex items-center gap-2 text-slate-600 hover:bg-slate-100" data-tab="members">
+          <i data-lucide="users" class="w-4 h-4"></i> รายชื่อสมาชิก
+        </button>
+        <button onclick="switchTab('pay')" class="nav-btn px-4 py-2 rounded-xl font-medium text-sm flex items-center gap-2 text-slate-600 hover:bg-slate-100" data-tab="pay">
+          <i data-lucide="arrow-up-circle" class="w-4 h-4"></i> ส่งสลิป
+        </button>
+        <button onclick="tryAccessAdmin('billings')" class="nav-btn px-4 py-2 rounded-xl font-medium text-sm flex items-center gap-2 text-slate-600 hover:bg-slate-100" data-tab="billings">
+          <i data-lucide="receipt" class="w-4 h-4"></i> รายการเก็บเงิน
+          <i data-lucide="lock" class="w-3 h-3 text-slate-400"></i>
+        </button>
+        <button onclick="tryAccessAdmin('admin')" class="nav-btn px-4 py-2 rounded-xl font-medium text-sm flex items-center gap-2 text-slate-600 hover:bg-slate-100 relative" data-tab="admin">
+          <i data-lucide="shield-check" class="w-4 h-4"></i> ตรวจสลิป (แอดมิน)
+          <i data-lucide="lock" class="w-3 h-3 text-slate-400"></i>
+          <span id="badge-pending" class="hidden px-1.5 py-0.5 text-[10px] bg-amber-500 text-white rounded-full">0</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-5xl mx-auto px-4 py-6">
+
+    <!-- 1. แดชบอร์ด -->
+    <section id="tab-dashboard" class="space-y-6">
+      <div class="bg-gradient-to-br from-brand-700 to-emerald-900 rounded-3xl p-6 text-white shadow-xl shadow-brand-700/10">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-white/10 pb-4 mb-4">
+          <div>
+            <span class="bg-brand-500/30 text-brand-100 border border-brand-400/30 text-[11px] px-2.5 py-0.5 rounded-full font-medium">ห้องเรียน</span>
+            <h2 class="text-2xl font-bold mt-1">สาขาการท่องเที่ยวและนิทรรศการ</h2>
+          </div>
+          <div class="flex items-center gap-2" id="admin-status-box">
+            <span id="admin-status-tag" class="text-xs bg-white/20 px-3 py-1 rounded-full text-white">ผู้ใช้งานทั่วไป</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10">
+            <span class="text-xs text-brand-100 flex items-center gap-1.5"><i data-lucide="users" class="w-3.5 h-3.5"></i> สมาชิก</span>
+            <p class="text-xl md:text-2xl font-bold mt-1" id="dash-total-students">29 คน</p>
+          </div>
+          <div class="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10">
+            <span class="text-xs text-brand-100 flex items-center gap-1.5"><i data-lucide="coins" class="w-3.5 h-3.5"></i> ยอดที่ต้องเก็บ</span>
+            <p class="text-xl md:text-2xl font-bold mt-1" id="dash-target-amount">฿0</p>
+          </div>
+          <div class="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10">
+            <span class="text-xs text-emerald-200 flex items-center gap-1.5"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> ได้รับแล้ว</span>
+            <p class="text-xl md:text-2xl font-bold mt-1 text-emerald-300" id="dash-paid-amount">฿0</p>
+          </div>
+          <div class="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10">
+            <span class="text-xs text-rose-200 flex items-center gap-1.5"><i data-lucide="clock" class="w-3.5 h-3.5"></i> ค้างชำระ</span>
+            <p class="text-xl md:text-2xl font-bold mt-1 text-rose-300" id="dash-pending-amount">฿0</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-4">
+        <h3 class="font-bold text-slate-800 text-lg flex items-center gap-2">
+          <i data-lucide="layers" class="w-5 h-5 text-brand-600"></i> รายการเก็บเงินปัจจุบัน
+        </h3>
+        <div id="dash-billing-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      </div>
+    </section>
+
+    <!-- 2. รายชื่อสมาชิก -->
+    <section id="tab-members" class="hidden space-y-4">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div>
+          <h2 class="text-xl font-bold text-slate-800">รายชื่อสมาชิกในห้อง</h2>
+          <p class="text-xs text-slate-500">ตรวจสอบสถานะการชำระเงินของทุกคนในห้องแบบ Real-time</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <label class="text-xs font-semibold text-slate-600 whitespace-nowrap">รายการ:</label>
+          <select id="member-bill-select" onchange="renderMembers()" class="bg-white border border-slate-200 text-slate-700 text-sm rounded-xl px-3 py-2 focus:ring-2 focus:ring-brand-500 outline-none shadow-sm"></select>
+        </div>
+      </div>
+
+      <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm space-y-3">
+        <div class="relative">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+          <input type="text" id="member-search" oninput="renderMembers()" placeholder="ค้นหาชื่อ หรือ รหัสนักศึกษา..." class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+        </div>
+        <div class="flex items-center gap-2 overflow-x-auto hide-scrollbar pt-1">
+          <button onclick="setFilter('all')" class="filter-btn active px-3.5 py-1.5 rounded-full text-xs font-medium bg-brand-600 text-white" data-filter="all">ทั้งหมด</button>
+          <button onclick="setFilter('paid')" class="filter-btn px-3.5 py-1.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600" data-filter="paid">จ่ายแล้ว</button>
+          <button onclick="setFilter('pending')" class="filter-btn px-3.5 py-1.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600" data-filter="pending">รอตรวจสอบ</button>
+          <button onclick="setFilter('unpaid')" class="filter-btn px-3.5 py-1.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600" data-filter="unpaid">ยังไม่จ่าย</button>
+          <button onclick="setFilter('rejected')" class="filter-btn px-3.5 py-1.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600" data-filter="rejected">ถูกปฏิเสธ</button>
+        </div>
+      </div>
+
+      <div id="members-list-container" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+    </section>
+
+    <!-- 3. แจ้งส่งสลิป -->
+    <section id="tab-pay" class="hidden max-w-lg mx-auto space-y-5">
+      <div class="text-center">
+        <div class="w-12 h-12 rounded-2xl bg-brand-100 text-brand-600 flex items-center justify-center mx-auto mb-2 shadow-sm">
+          <i data-lucide="receipt" class="w-6 h-6"></i>
+        </div>
+        <h2 class="text-2xl font-bold text-slate-800">แจ้งชำระเงิน</h2>
+        <p class="text-xs text-slate-500">เลือกชื่อของคุณเพื่อส่งสลิปให้แอดมินตรวจสอบ</p>
+      </div>
+
+      <div class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">1. รายการที่ต้องจ่าย</label>
+          <select id="pay-bill-select" onchange="updatePayAmountDisplay()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none"></select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">2. เลือกชื่อของคุณ</label>
+          <select id="pay-student-select" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-brand-500 outline-none"></select>
+        </div>
+
+        <div class="bg-brand-50 border border-brand-100 rounded-2xl p-4 flex items-center justify-between">
+          <div>
+            <span class="text-xs text-brand-800 font-medium block">ยอดเงินที่ต้องโอน</span>
+            <span class="text-[11px] text-brand-600">กรุณาโอนให้ตรงยอดเงิน</span>
+          </div>
+          <span id="pay-amount-display" class="text-2xl font-bold text-brand-700">฿0</span>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1.5">3. แนบรูปสลิป</label>
+          <div class="border-2 border-dashed border-slate-200 hover:border-brand-500 rounded-2xl p-5 text-center cursor-pointer transition bg-slate-50/50" onclick="document.getElementById('slip-input').click()">
+            <input type="file" id="slip-input" accept="image/*" class="hidden" onchange="previewSlip(event)">
+            <div id="slip-placeholder" class="space-y-1.5">
+              <i data-lucide="image-plus" class="w-8 h-8 mx-auto text-slate-400"></i>
+              <p class="text-xs font-medium text-slate-600">กดเพื่อเลือกรูปภาพสลิปจากเครื่อง</p>
+            </div>
+            <img id="slip-preview" class="hidden max-h-56 mx-auto rounded-xl object-contain shadow-sm border border-slate-200" alt="สลิป">
+          </div>
+        </div>
+
+        <button id="btn-submit-slip" onclick="submitSlip()" class="w-full py-3 bg-brand-600 hover:bg-brand-700 active:scale-[0.99] text-white rounded-xl font-medium shadow-md shadow-brand-500/20 transition flex items-center justify-center gap-2">
+          <i data-lucide="send" class="w-4 h-4"></i> ยืนยันการส่งสลิป
+        </button>
+      </div>
+    </section>
+
+    <!-- 4. หน้าแอดมิน: จัดการรายการเก็บเงิน -->
+    <section id="tab-billings" class="hidden space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="text-xl font-bold text-slate-800">จัดการรายการเก็บเงิน</h2>
+            <span class="text-[10px] bg-brand-100 text-brand-700 px-2 py-0.5 rounded-full font-bold">แอดมิน</span>
+          </div>
+          <p class="text-xs text-slate-500">สร้างหรือลบรายการเก็บเงินของห้อง</p>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="logoutAdmin()" class="px-3 py-2 bg-slate-100 text-slate-600 rounded-xl text-xs font-medium hover:bg-slate-200">
+            ออกจากระบบแอดมิน
+          </button>
+          <button onclick="openBillingModal()" class="px-3.5 py-2 bg-brand-600 text-white rounded-xl text-xs font-medium hover:bg-brand-700 shadow-sm flex items-center gap-1.5">
+            <i data-lucide="plus" class="w-4 h-4"></i> เพิ่มรายการ
+          </button>
+        </div>
+      </div>
+      <div id="billings-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+    </section>
+
+    <!-- 5. หน้าแอดมิน: ตรวจสลิป -->
+    <section id="tab-admin" class="hidden space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 class="text-xl font-bold text-slate-800">ตรวจสลิปโอนเงิน</h2>
+            <span class="text-[10px] bg-brand-100 text-brand-700 px-2 py-0.5 rounded-full font-bold">แอดมิน</span>
+          </div>
+          <p class="text-xs text-slate-500">ตรวจสอบและกดยืนยันยอดให้เพื่อน</p>
+        </div>
+        <button onclick="logoutAdmin()" class="px-3 py-2 bg-slate-100 text-slate-600 rounded-xl text-xs font-medium hover:bg-slate-200">
+          ออกจากระบบแอดมิน
+        </button>
+      </div>
+      <div id="admin-slip-list" class="space-y-3"></div>
+    </section>
+
+  </main>
+
+  <!-- Bottom Navigation (Mobile) -->
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 px-2 py-1.5 flex justify-around items-center">
+    <button onclick="switchTab('dashboard')" class="mobile-nav-btn flex flex-col items-center p-1 text-brand-600 text-[10px] font-medium" data-tab="dashboard">
+      <i data-lucide="pie-chart" class="w-5 h-5"></i>
+      <span class="mt-1">แดชบอร์ด</span>
+    </button>
+    <button onclick="switchTab('members')" class="mobile-nav-btn flex flex-col items-center p-1 text-slate-400 text-[10px] font-medium" data-tab="members">
+      <i data-lucide="users" class="w-5 h-5"></i>
+      <span class="mt-1">สมาชิก</span>
+    </button>
+    <button onclick="switchTab('pay')" class="mobile-nav-btn flex flex-col items-center p-1 text-slate-400 text-[10px] font-medium" data-tab="pay">
+      <i data-lucide="arrow-up-circle" class="w-5 h-5"></i>
+      <span class="mt-1">ส่งสลิป</span>
+    </button>
+    <button onclick="tryAccessAdmin('billings')" class="mobile-nav-btn flex flex-col items-center p-1 text-slate-400 text-[10px] font-medium" data-tab="billings">
+      <i data-lucide="receipt" class="w-5 h-5"></i>
+      <span class="mt-1">รายการเงิน</span>
+    </button>
+    <button onclick="tryAccessAdmin('admin')" class="mobile-nav-btn flex flex-col items-center p-1 text-slate-400 text-[10px] font-medium relative" data-tab="admin">
+      <i data-lucide="shield-check" class="w-5 h-5"></i>
+      <span class="mt-1">ตรวจสลิป</span>
+      <span id="badge-pending-mobile" class="hidden absolute top-1 right-3 w-2 h-2 bg-amber-500 rounded-full ring-2 ring-white"></span>
+    </button>
+  </nav>
+
+  <!-- Modal ป้อนรหัสแอดมิน (1212) -->
+  <div id="admin-auth-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-xs w-full p-6 text-center space-y-4 shadow-2xl">
+      <div class="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center mx-auto">
+        <i data-lucide="lock" class="w-6 h-6"></i>
+      </div>
+      <div>
+        <h3 class="font-bold text-slate-800 text-lg">เข้าสู่ระบบแอดมิน</h3>
+        <p class="text-xs text-slate-500 mt-1">กรุณากรอกรหัสผ่านเพื่อจัดการข้อมูล</p>
+      </div>
+      <input type="password" id="admin-passcode" placeholder="รหัสผ่าน 4 หลัก" maxlength="4" class="w-full text-center tracking-widest text-xl font-bold py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none">
+      <div class="flex gap-2">
+        <button onclick="closeAdminAuthModal()" class="w-1/2 py-2 border border-slate-200 rounded-xl text-xs font-medium text-slate-600">ยกเลิก</button>
+        <button onclick="verifyAdminPasscode()" class="w-1/2 py-2 bg-brand-600 text-white rounded-xl text-xs font-medium hover:bg-brand-700">ยืนยัน</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal ดูสลิป -->
+  <div id="slip-modal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full overflow-hidden shadow-2xl">
+      <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+        <h4 class="font-bold text-slate-800 text-sm">หลักฐานการโอนเงิน</h4>
+        <button onclick="closeSlipModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <div class="p-4">
+        <img id="modal-slip-img" class="w-full max-h-96 object-contain rounded-xl bg-slate-50" src="" alt="สลิป">
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal เพิ่ม/แก้ไขบิล -->
+  <div id="billing-modal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <h3 id="billing-modal-title" class="font-bold text-lg text-slate-800">เพิ่มรายการเก็บเงิน</h3>
+        <button onclick="closeBillingModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form id="billing-form" onsubmit="saveBilling(event)" class="space-y-3">
+        <input type="hidden" id="billing-id">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อรายการ</label>
+          <input type="text" id="billing-title" required placeholder="เช่น ค่าเสื้อสาขา, ค่าชีท" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">จำนวนเงิน (บาท / คน)</label>
+          <input type="number" id="billing-amount" required min="1" placeholder="เช่น 250" class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">วันครบกำหนดชำระ</label>
+          <input type="date" id="billing-duedate" required class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 outline-none">
+        </div>
+        <div class="pt-2 flex gap-2">
+          <button type="button" onclick="closeBillingModal()" class="w-1/2 py-2.5 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50">ยกเลิก</button>
+          <button type="submit" class="w-1/2 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-sm font-medium transition">บันทึก</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Firebase SDK (Real-time Database) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+
+    // ** ใส่การตั้งค่า Firebase ของคุณที่นี่ (ดูวิธีทำด้านล่าง) **
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    // เปิดใช้งาน Firebase หากกรอก config แล้ว หรือสลับใช้ Local Mode ชั่วคราว
+    let db = null;
+    let isCloudMode = !firebaseConfig.apiKey.includes("YOUR_API_KEY");
+    if (isCloudMode) {
+      const app = initializeApp(firebaseConfig);
+      db = getFirestore(app);
+    }
+
+    // 1. รายชื่อนักศึกษา 29 คน
+    const rawStudentNames = [
+      "นางสาวกมัยธร มีเดช (6740309101)", "นางสาวกันยกร เคนพรม (6740309103)",
+      "นางสาวขนิษฐา กลิ่นศรีสุข (6740309105)", "นางสาวเจสสิก้า ไฮตัน (6740309106)",
+      "นางสาวชริดา พุทธาศรี (6740309107)", "นางสาวชลิตา อินนอก (6740309109)",
+      "นางสาวนิราณี กระฉอดนอก (6740309110)", "นางสาวเนตรนภา สถานถิ่น (6740309111)",
+      "นางสาวปิยฉัตร สาตะสิน (6740309112)", "นางสาวมนัสนันท์ เชือกงูเหลือม (6740309113)",
+      "นางสาวศิรประภา เกิดศักดิ์ ณ แวงน้อย (6740309115)", "นางสาวสกเม็ย เฮง (6740309117)",
+      "นางสาวสกุลกาญจน์ วรตาฤดี (6740309118)", "นางสาวสุจิตรา ถานะปัดโถ (6740309119)",
+      "นางสาวสุทธิดา ไชยบุรี (6740309120)", "นางสาวอัจฉราพรรณ ช้อยกิ่ง (6740309122)",
+      "นางสาวอารียา จำปาโพธิ์ (6740309123)", "นายชญานนท์ ยิ้มไทร (6740309124)",
+      "นายณัฐพงศ์ ปุรา (6740309127)", "นายธัชพงศ์ บุญเกิด (6740309128)",
+      "นายพฤทธิพร สังข์วิลัย (6740309129)", "นายศุภกร เกษรแก้ว (6740309130)",
+      "นางสาวกติกา ภักดี (6740309131)", "นางสาวลลิตตา การทหาร (6740309132)",
+      "นางสาวนิภาสิริ ปัจจัยยา (6740309133)", "นางสาวพัฒนาวดี สุวรรณปักษ์ (6740309134)",
+      "นายชัยธวัช เจนชัย (6740309136)", "นายฐกร ฐิติธีวรากุล (6740309137)",
+      "นายภาณุพงค์ พัดพาน (6740309138)"
+    ];
+
+    window.students = rawStudentNames.map((item, idx) => {
+      const match = item.match(/(.+)\s\((\d+)\)/);
+      return { id: match ? match[2] : `STU-${idx+1}`, name: match ? match[1].trim() : item };
+    });
+
+    window.billings = [];
+    window.payments = [];
+    window.isAdmin = sessionStorage.getItem('cp_is_admin') === 'true';
+    window.pendingNavTab = null;
+
+    // เชื่อมต่อฐานข้อมูล Real-time
+    if (isCloudMode) {
+      onSnapshot(collection(db, "billings"), (snap) => {
+        window.billings = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        refreshUI();
+      });
+
+      onSnapshot(collection(db, "payments"), (snap) => {
+        window.payments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        refreshUI();
+      });
+    } else {
+      // โหมดสำรองออฟไลน์ (Local)
+      window.billings = JSON.parse(localStorage.getItem('cp_billings')) || [
+        { id: 'b1', title: 'ค่าเสื้อสาขาการท่องเที่ยว', amount: 350, dueDate: '2025-04-15' }
+      ];
+      window.payments = JSON.parse(localStorage.getItem('cp_payments')) || [];
+    }
+
+    window.syncBillingCloud = async function(billingData) {
+      if (isCloudMode) {
+        await setDoc(doc(db, "billings", billingData.id), billingData);
+      } else {
+        const idx = window.billings.findIndex(b => b.id === billingData.id);
+        if (idx >= 0) window.billings[idx] = billingData;
+        else window.billings.push(billingData);
+        localStorage.setItem('cp_billings', JSON.stringify(window.billings));
+        refreshUI();
+      }
+    };
+
+    window.deleteBillingCloud = async function(id) {
+      if (isCloudMode) {
+        await deleteDoc(doc(db, "billings", id));
+      } else {
+        window.billings = window.billings.filter(b => b.id !== id);
+        localStorage.setItem('cp_billings', JSON.stringify(window.billings));
+        refreshUI();
+      }
+    };
+
+    window.syncPaymentCloud = async function(paymentData) {
+      if (isCloudMode) {
+        await setDoc(doc(db, "payments", paymentData.id), paymentData);
+      } else {
+        const idx = window.payments.findIndex(p => p.id === paymentData.id);
+        if (idx >= 0) window.payments[idx] = paymentData;
+        else window.payments.push(paymentData);
+        localStorage.setItem('cp_payments', JSON.stringify(window.payments));
+        refreshUI();
+      }
+    };
+
+    window.refreshUI = function() {
+      renderDashboard();
+      renderMembers();
+      renderBillings();
+      renderAdmin();
+      updateBadges();
+      lucide.createIcons();
+    };
+
+    // อัปเดตสถานะแอดมินบนหัวเว็บ
+    window.updateAdminBadgeDisplay = function() {
+      const tag = document.getElementById('admin-status-tag');
+      if (window.isAdmin) {
+        tag.innerText = "สถานะ: แอดมิน (พร้อมแก้ไข)";
+        tag.className = "text-xs bg-emerald-500 font-bold px-3 py-1 rounded-full text-white";
+      } else {
+        tag.innerText = "ผู้ใช้งานทั่วไป";
+        tag.className = "text-xs bg-white/20 px-3 py-1 rounded-full text-white";
+      }
+    };
+  </script>
+
+  <!-- ฟังก์ชันการทำงานฝั่งผู้ใช้และระบบรักษาความปลอดภัย -->
+  <script>
+    const ADMIN_PASSCODE = "1212"; // รหัสผ่านแอดมิน
+    let currentFilter = 'all';
+    let uploadedSlipBase64 = null;
+
+    function tryAccessAdmin(targetTab) {
+      if (window.isAdmin) {
+        switchTab(targetTab);
+      } else {
+        window.pendingNavTab = targetTab;
+        document.getElementById('admin-passcode').value = '';
+        document.getElementById('admin-auth-modal').classList.remove('hidden');
+        document.getElementById('admin-passcode').focus();
+      }
+    }
+
+    function closeAdminAuthModal() {
+      document.getElementById('admin-auth-modal').classList.add('hidden');
+      window.pendingNavTab = null;
+    }
+
+    function verifyAdminPasscode() {
+      const entered = document.getElementById('admin-passcode').value;
+      if (entered === ADMIN_PASSCODE) {
+        window.isAdmin = true;
+        sessionStorage.setItem('cp_is_admin', 'true');
+        closeAdminAuthModal();
+        window.updateAdminBadgeDisplay();
+        alert('เข้าสู่ระบบแอดมินสำเร็จ!');
+        if (window.pendingNavTab) {
+          switchTab(window.pendingNavTab);
+        }
+      } else {
+        alert('รหัสผ่านไม่ถูกต้อง! (กรุณาใส่รหัส 1212)');
+      }
+    }
+
+    function logoutAdmin() {
+      window.isAdmin = false;
+      sessionStorage.removeItem('cp_is_admin');
+      window.updateAdminBadgeDisplay();
+      alert('ออกจากระบบแอดมินแล้ว');
+      switchTab('dashboard');
+    }
+
+    function switchTab(tabId) {
+      if ((tabId === 'admin' || tabId === 'billings') && !window.isAdmin) {
+        tryAccessAdmin(tabId);
+        return;
+      }
+
+      ['dashboard', 'members', 'pay', 'billings', 'admin'].forEach(tab => {
+        document.getElementById(`tab-${tab}`).classList.add('hidden');
+      });
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        if(btn.dataset.tab === tabId) {
+          btn.classList.add('bg-brand-50', 'text-brand-700');
+          btn.classList.remove('text-slate-600', 'hover:bg-slate-100');
+        } else {
+          btn.classList.remove('bg-brand-50', 'text-brand-700');
+          btn.classList.add('text-slate-600', 'hover:bg-slate-100');
+        }
+      });
+
+      document.querySelectorAll('.mobile-nav-btn').forEach(btn => {
+        if(btn.dataset.tab === tabId) {
+          btn.classList.add('text-brand-600');
+          btn.classList.remove('text-slate-400');
+        } else {
+          btn.classList.remove('text-brand-600');
+          btn.classList.add('text-slate-400');
+        }
+      });
+
+      if(tabId === 'dashboard') renderDashboard();
+      if(tabId === 'members') renderMembers();
+      if(tabId === 'pay') populatePayForm();
+      if(tabId === 'billings') renderBillings();
+      if(tabId === 'admin') renderAdmin();
+
+      lucide.createIcons();
+    }
+
+    function renderDashboard() {
+      const totalStudents = window.students.length;
+      document.getElementById('dash-total-students').innerText = `${totalStudents} คน`;
+
+      let totalTarget = 0;
+      let totalPaid = 0;
+
+      window.billings.forEach(bill => {
+        totalTarget += bill.amount * totalStudents;
+      });
+
+      window.payments.forEach(p => {
+        if (p.status === 'paid') {
+          const bill = window.billings.find(b => b.id === p.billId);
+          if (bill) totalPaid += bill.amount;
+        }
+      });
+
+      const totalPending = Math.max(0, totalTarget - totalPaid);
+
+      document.getElementById('dash-target-amount').innerText = `฿${totalTarget.toLocaleString()}`;
+      document.getElementById('dash-paid-amount').innerText = `฿${totalPaid.toLocaleString()}`;
+      document.getElementById('dash-pending-amount').innerText = `฿${totalPending.toLocaleString()}`;
+
+      const dashList = document.getElementById('dash-billing-list');
+      if (window.billings.length === 0) {
+        dashList.innerHTML = `<p class="text-slate-400 text-xs py-4 text-center col-span-2">ยังไม่มีรายการเก็บเงิน</p>`;
+        return;
+      }
+
+      dashList.innerHTML = window.billings.map(b => {
+        const paidCount = window.payments.filter(p => p.billId === b.id && p.status === 'paid').length;
+        const progress = Math.round((paidCount / totalStudents) * 100) || 0;
+        return `
+          <div class="border border-slate-100 bg-slate-50/70 p-4 rounded-2xl">
+            <div class="flex justify-between items-start">
+              <div>
+                <h4 class="font-bold text-slate-800 text-sm">${b.title}</h4>
+                <p class="text-[11px] text-slate-400 mt-0.5">ครบกำหนด: ${b.dueDate}</p>
+              </div>
+              <span class="text-xs font-bold text-brand-700 bg-brand-100/70 px-2.5 py-1 rounded-lg">฿${b.amount}</span>
+            </div>
+            <div class="mt-4">
+              <div class="flex justify-between text-xs mb-1">
+                <span class="text-slate-500">ชำระแล้ว ${paidCount}/${totalStudents} คน</span>
+                <span class="font-semibold text-brand-700">${progress}%</span>
+              </div>
+              <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                <div class="bg-brand-600 h-full rounded-full transition-all duration-300" style="width: ${progress}%"></div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderMembers() {
+      const select = document.getElementById('member-bill-select');
+      if (select && select.children.length !== window.billings.length) {
+        select.innerHTML = window.billings.map(b => `<option value="${b.id}">${b.title} (฿${b.amount})</option>`).join('');
+      }
+
+      const activeBillId = select ? select.value || (window.billings[0] ? window.billings[0].id : null) : null;
+      const query = document.getElementById('member-search').value.toLowerCase().trim();
+      const container = document.getElementById('members-list-container');
+
+      if (!activeBillId) {
+        container.innerHTML = `<p class="text-center text-slate-400 py-8 col-span-2 text-sm">ยังไม่มีรายการเก็บเงิน</p>`;
+        return;
+      }
+
+      const filtered = window.students.filter(student => {
+        const matchQuery = student.name.toLowerCase().includes(query) || student.id.includes(query);
+        const p = window.payments.find(pay => pay.billId === activeBillId && pay.studentId === student.id);
+        const status = p ? p.status : 'unpaid';
+        const matchFilter = (currentFilter === 'all') || (currentFilter === status);
+        return matchQuery && matchFilter;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<p class="text-center text-slate-400 py-8 col-span-2 text-sm">ไม่พบข้อมูลตามเงื่อนไข</p>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(student => {
+        const p = window.payments.find(pay => pay.billId === activeBillId && pay.studentId === student.id);
+        const status = p ? p.status : 'unpaid';
+        
+        let badgeHtml = '';
+        if (status === 'paid') {
+          badgeHtml = `<span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700 flex items-center gap-1"><i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> จ่ายแล้ว</span>`;
+        } else if (status === 'pending') {
+          badgeHtml = `<span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-700 flex items-center gap-1"><i data-lucide="clock" class="w-3.5 h-3.5"></i> รอตรวจสอบ</span>`;
+        } else if (status === 'rejected') {
+          badgeHtml = `<span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-rose-100 text-rose-700 flex items-center gap-1"><i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> ถูกปฏิเสธ</span>`;
+        } else {
+          badgeHtml = `<span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-slate-100 text-slate-500">ยังไม่จ่าย</span>`;
+        }
+
+        return `
+          <div class="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+              <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center font-bold text-sm">
+                ${student.name.charAt(0)}
+              </div>
+              <div>
+                <h4 class="font-medium text-slate-800 text-sm leading-snug">${student.name}</h4>
+                <p class="text-xs text-slate-400 font-mono mt-0.5">รหัส: ${student.id}</p>
+              </div>
+            </div>
+            <div>${badgeHtml}</div>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    function setFilter(filter) {
+      currentFilter = filter;
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        if(btn.dataset.filter === filter) {
+          btn.className = "filter-btn active px-3.5 py-1.5 rounded-full text-xs font-medium bg-brand-600 text-white";
+        } else {
+          btn.className = "filter-btn px-3.5 py-1.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600";
+        }
+      });
+      renderMembers();
+    }
+
+    function populatePayForm() {
+      const bSelect = document.getElementById('pay-bill-select');
+      const sSelect = document.getElementById('pay-student-select');
+
+      bSelect.innerHTML = window.billings.map(b => `<option value="${b.id}">${b.title}</option>`).join('');
+      sSelect.innerHTML = '<option value="">-- แตะเลือกชื่อของคุณ --</option>' + 
+        window.students.map(s => `<option value="${s.id}">${s.name} (${s.id})</option>`).join('');
+
+      updatePayAmountDisplay();
+    }
+
+    function updatePayAmountDisplay() {
+      const bId = document.getElementById('pay-bill-select').value;
+      const bill = window.billings.find(b => b.id === bId);
+      document.getElementById('pay-amount-display').innerText = bill ? `฿${bill.amount}` : '฿0';
+    }
+
+    function previewSlip(event) {
+      const file = event.target.files[0];
+      if (file) {
+        // ย่อรูปเพื่อประหยัดขนาดรับส่ง
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = new Image();
+          img.src = e.target.result;
+          img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const maxW = 800;
+            const scale = maxW / img.width;
+            canvas.width = (img.width > maxW) ? maxW : img.width;
+            canvas.height = (img.width > maxW) ? img.height * scale : img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            uploadedSlipBase64 = canvas.toDataURL('image/jpeg', 0.7);
+
+            const preview = document.getElementById('slip-preview');
+            preview.src = uploadedSlipBase64;
+            preview.classList.remove('hidden');
+            document.getElementById('slip-placeholder').classList.add('hidden');
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    async function submitSlip() {
+      const billId = document.getElementById('pay-bill-select').value;
+      const studentId = document.getElementById('pay-student-select').value;
+
+      if (!studentId) {
+        alert('กรุณาเลือกชื่อของคุณ');
+        return;
+      }
+      if (!uploadedSlipBase64) {
+        alert('กรุณาแนบรูปภาพสลิปโอนเงิน');
+        return;
+      }
+
+      const btn = document.getElementById('btn-submit-slip');
+      btn.innerText = 'กำลังส่งข้อมูล...';
+      btn.disabled = true;
+
+      const paymentObj = {
+        id: `${studentId}_${billId}`,
+        billId: billId,
+        studentId: studentId,
+        status: 'pending',
+        slipUrl: uploadedSlipBase64,
+        date: new Date().toLocaleString('th-TH')
+      };
+
+      await window.syncPaymentCloud(paymentObj);
+
+      alert('ส่งสลิปเรียบร้อยแล้ว! สถานะจะเปลี่ยนเป็น "รอตรวจสอบ"');
+      btn.innerText = 'ยืนยันการส่งสลิป';
+      btn.disabled = false;
+
+      // ล้างข้อมูล
+      document.getElementById('slip-input').value = '';
+      document.getElementById('slip-preview').classList.add('hidden');
+      document.getElementById('slip-placeholder').classList.remove('hidden');
+      uploadedSlipBase64 = null;
+
+      switchTab('members');
+    }
+
+    function renderBillings() {
+      const container = document.getElementById('billings-list');
+      if (window.billings.length === 0) {
+        container.innerHTML = `<p class="text-slate-400 text-sm py-8 text-center col-span-2">ยังไม่มีรายการเก็บเงิน</p>`;
+        return;
+      }
+
+      container.innerHTML = window.billings.map(b => `
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between">
+          <div>
+            <h4 class="font-bold text-slate-800 text-sm">${b.title}</h4>
+            <div class="flex items-center gap-3 text-xs text-slate-400 mt-1">
+              <span>฿${b.amount} / คน</span>
+              <span>•</span>
+              <span>ครบกำหนด: ${b.dueDate}</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-1">
+            <button onclick="deleteBilling('${b.id}')" class="p-2 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+
+      lucide.createIcons();
+    }
+
+    function openBillingModal() {
+      document.getElementById('billing-modal').classList.remove('hidden');
+      document.getElementById('billing-form').reset();
+    }
+
+    function closeBillingModal() {
+      document.getElementById('billing-modal').classList.add('hidden');
+    }
+
+    async function saveBilling(e) {
+      e.preventDefault();
+      const title = document.getElementById('billing-title').value;
+      const amount = parseFloat(document.getElementById('billing-amount').value);
+      const dueDate = document.getElementById('billing-duedate').value;
+
+      const newBilling = {
+        id: 'b_' + Date.now(),
+        title,
+        amount,
+        dueDate
+      };
+
+      await window.syncBillingCloud(newBilling);
+      closeBillingModal();
+      alert('เพิ่มรายการเก็บเงินสำเร็จ');
+    }
+
+    async function deleteBilling(id) {
+      if (confirm('คุณต้องการลบรายการนี้ใช่หรือไม่? ข้อมูลการจ่ายเงินของรายการนี้จะถูกลบออกด้วย')) {
+        await window.deleteBillingCloud(id);
+      }
+    }
+
+    function renderAdmin() {
+      const container = document.getElementById('admin-slip-list');
+      const pendingPayments = window.payments.filter(p => p.status === 'pending');
+
+      if (pendingPayments.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white p-10 rounded-3xl border border-slate-200/80 text-center space-y-2">
+            <i data-lucide="check-circle" class="w-10 h-10 mx-auto text-emerald-500"></i>
+            <h4 class="font-bold text-slate-700">ไม่มีสลิปรอตรวจสอบ</h4>
+            <p class="text-xs text-slate-400">เมื่อเพื่อนในห้องส่งสลิปมา จะแสดงให้คุณตรวจที่นี่ทันที</p>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      container.innerHTML = pendingPayments.map(p => {
+        const student = window.students.find(s => s.id === p.studentId) || { name: 'ไม่ระบุชื่อ', id: p.studentId };
+        const bill = window.billings.find(b => b.id === p.billId) || { title: 'ไม่พบรายการ', amount: 0 };
+
+        return `
+          <div class="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex items-start gap-3">
+              <img src="${p.slipUrl}" onclick="openSlipModal('${p.slipUrl}')" class="w-16 h-20 object-cover rounded-xl border border-slate-200 cursor-pointer hover:opacity-80 transition" alt="สลิป">
+              <div>
+                <span class="text-[10px] font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded-full">${bill.title} (฿${bill.amount})</span>
+                <h4 class="font-bold text-slate-800 text-sm mt-1">${student.name}</h4>
+                <p class="text-xs text-slate-400 font-mono">รหัส: ${student.id}</p>
+                <p class="text-[11px] text-slate-400 mt-1">เวลาส่ง: ${p.date}</p>
+              </div>
+            </div>
+            
+            <div class="flex items-center gap-2 border-t md:border-t-0 pt-3 md:pt-0">
+              <button onclick="openSlipModal('${p.slipUrl}')" class="flex-1 md:flex-none px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1">
+                <i data-lucide="eye" class="w-3.5 h-3.5"></i> สลิปเต็ม
+              </button>
+              <button onclick="setPaymentStatus('${p.id}', 'rejected')" class="flex-1 md:flex-none px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1">
+                <i data-lucide="x" class="w-3.5 h-3.5"></i> ปฏิเสธ
+              </button>
+              <button onclick="setPaymentStatus('${p.id}', 'paid')" class="flex-1 md:flex-none px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-medium transition flex items-center justify-center gap-1 shadow-sm">
+                <i data-lucide="check" class="w-3.5 h-3.5"></i> ยืนยันยอด
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    async function setPaymentStatus(paymentId, newStatus) {
+      const p = window.payments.find(pay => pay.id === paymentId);
+      if (p) {
+        p.status = newStatus;
+        await window.syncPaymentCloud(p);
+      }
+    }
+
+    function updateBadges() {
+      const pendingCount = window.payments.filter(p => p.status === 'pending').length;
+      const bDesktop = document.getElementById('badge-pending');
+      const bMobile = document.getElementById('badge-pending-mobile');
+
+      if (pendingCount > 0) {
+        bDesktop.innerText = pendingCount;
+        bDesktop.classList.remove('hidden');
+        bMobile.classList.remove('hidden');
+      } else {
+        bDesktop.classList.add('hidden');
+        bMobile.classList.add('hidden');
+      }
+    }
+
+    function openSlipModal(url) {
+      document.getElementById('modal-slip-img').src = url;
+      document.getElementById('slip-modal').classList.remove('hidden');
+    }
+
+    function closeSlipModal() {
+      document.getElementById('slip-modal').classList.add('hidden');
+    }
+
+    window.onload = function() {
+      window.updateAdminBadgeDisplay();
+      renderDashboard();
+      lucide.createIcons();
+    };
+  </script>
+</body>
+</html>
